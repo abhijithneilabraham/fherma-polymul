@@ -16,7 +16,6 @@ unsigned blocks(size_t work) {
     if (count > 2147483647) throw std::runtime_error("grid limit exceeded");
     return unsigned(count);
 }
-__device__ unsigned reverse(unsigned x, unsigned bits) { return bits ? __brev(x) >> (32 - bits) : 0; }
 // Eight lanes share wide values. The SDK provides 256-bit arithmetic in
 // thread mode, so narrow points use one thread instead of an unavailable warp type.
 template<unsigned K> struct Traits {
@@ -89,6 +88,74 @@ __global__ void product(const uint32_t* ab, uint32_t* c, const uint32_t* q,
     Big a(ab, i), b(ab, count + i);
     a.mul_montgomery(b, modulus).store(c, i);
 }
+// The last DIF stages, spectral product, and first inverse DIT stages share
+// the same contiguous tile. Keep both operands resident across this boundary.
+// Each arithmetic group owns one butterfly; barriers are reached by every thread.
+template<unsigned K, unsigned Tile>
+__global__ void fused_middle(const uint32_t* ab, uint32_t* c,
+                             const uint32_t* forward, const uint32_t* inverse,
+                             const uint32_t* q, size_t count, unsigned n) {
+    static_assert(Tile * K * 2 * sizeof(uint32_t) <= 48 * 1024, "shared memory limit");
+    static_assert(threads / Traits<K>::lanes >= Tile / 2, "not enough arithmetic groups");
+    __shared__ uint32_t a_tile[Tile * K];
+    __shared__ uint32_t b_tile[Tile * K];
+    const size_t base = size_t(blockIdx.x) * Tile;
+    const unsigned group = threadIdx.x / Traits<K>::lanes;
+    for (unsigned word = threadIdx.x; word < Tile * K; word += blockDim.x) {
+        a_tile[word] = ab[base * K + word];
+        b_tile[word] = ab[(count + base) * K + word];
+    }
+    __syncthreads();
+    using Big = typename Descriptor<K>::bigint;
+    typename Descriptor<K>::modulus modulus(q);
+    Big prime(q);
+    for (unsigned half = Tile / 2; half; half /= 2) {
+        if (group < Tile / 2) {
+            const unsigned j = group % half;
+            const unsigned left = group / half * (2 * half) + j;
+            // The two operands reuse the same twiddle but keep independent data.
+            Big factor(forward, j * (n / (2 * half)));
+            {
+                Big u(a_tile, left), v(a_tile, left + half);
+                Big difference = u.sub_mod(v, prime);
+                u.add_mod(v, prime).store(a_tile, left);
+                if (j) difference = difference.mul_montgomery(factor, modulus);
+                difference.store(a_tile, left + half);
+            }
+            {
+                Big u(b_tile, left), v(b_tile, left + half);
+                Big difference = u.sub_mod(v, prime);
+                u.add_mod(v, prime).store(b_tile, left);
+                if (j) difference = difference.mul_montgomery(factor, modulus);
+                difference.store(b_tile, left + half);
+            }
+        }
+        __syncthreads();
+    }
+    if (group < Tile / 2) {
+        for (unsigned i = group; i < Tile; i += Tile / 2) {
+            Big a(a_tile, i), b(b_tile, i);
+            a.mul_montgomery(b, modulus).store(a_tile, i);
+        }
+    }
+    __syncthreads();
+    for (unsigned half = 1; half < Tile; half *= 2) {
+        if (group < Tile / 2) {
+            const unsigned j = group % half;
+            const unsigned left = group / half * (2 * half) + j;
+            Big u(a_tile, left), v(a_tile, left + half);
+            if (j) {
+                Big factor(inverse, j * (n / (2 * half)));
+                v = v.mul_montgomery(factor, modulus);
+            }
+            u.add_mod(v, prime).store(a_tile, left);
+            u.sub_mod(v, prime).store(a_tile, left + half);
+        }
+        __syncthreads();
+    }
+    for (unsigned word = threadIdx.x; word < Tile * K; word += blockDim.x)
+        c[base * K + word] = a_tile[word];
+}
 template<unsigned K>
 __global__ void normalize(uint32_t* c, const uint32_t* factors, const uint32_t* q, size_t count, unsigned n) {
     const size_t i = (size_t(blockIdx.x) * blockDim.x + threadIdx.x) / Traits<K>::lanes;
@@ -130,15 +197,23 @@ void execute(State& s) {
     twist<K><<<blocks(2 * s.count * Traits<K>::lanes), threads>>>(s.ab, s.twist_table, s.q, s.count, s.n, s.log_n);
     check(cudaGetLastError(), "twist");
     check(cudaEventRecord(s.stage[2]), "record twist");
-    for (unsigned half = s.n / 2; half; half /= 2) {
+    constexpr unsigned tile = K <= 64 ? 64 : 32;
+    const bool fuse = s.n >= tile;
+    for (unsigned half = s.n / 2; half >= (fuse ? tile : 1); half /= 2) {
         butterfly<K, true><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.ab, s.forward, s.q, s.count, s.n, half);
         check(cudaGetLastError(), "forward transform");
     }
     check(cudaEventRecord(s.stage[3]), "record forward");
-    product<K><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.ab, s.c, s.q, s.count, s.n, s.log_n);
-    check(cudaGetLastError(), "pointwise product");
+    if (fuse) {
+        fused_middle<K, tile><<<unsigned(s.count / tile), threads>>>(
+            s.ab, s.c, s.forward, s.inverse, s.q, s.count, s.n);
+        check(cudaGetLastError(), "fused transform middle");
+    } else {
+        product<K><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.ab, s.c, s.q, s.count, s.n, s.log_n);
+        check(cudaGetLastError(), "pointwise product");
+    }
     check(cudaEventRecord(s.stage[4]), "record product");
-    for (unsigned half = 1; half < s.n; half *= 2) {
+    for (unsigned half = fuse ? tile : 1; half < s.n; half *= 2) {
         const size_t work = s.count / 2;
         butterfly<K><<<blocks(work * Traits<K>::lanes), threads>>>(s.c, s.inverse, s.q, work, s.n, half);
         check(cudaGetLastError(), "inverse transform");
@@ -211,7 +286,7 @@ fherma::Outputs fherma_d2h(void* state, fherma::Outputs output) {
 }
 std::vector<std::pair<std::string, double>> fherma_metrics(void* state) {
     auto& s = *static_cast<State*>(state);
-    const char* names[] = {"prepare_ms", "twist_ms", "forward_ms", "product_ms", "inverse_ms", "normalize_ms", "pack_ms"};
+    const char* names[] = {"prepare_ms", "twist_ms", "forward_outer_ms", "fused_middle_or_product_ms", "inverse_outer_ms", "normalize_ms", "pack_ms"};
     std::vector<std::pair<std::string, double>> result;
     for (unsigned i = 0; i < 7; ++i) {
         float ms = 0;
