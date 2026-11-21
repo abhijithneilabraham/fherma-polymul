@@ -26,4 +26,3 @@ on `fherma-gpu-rtx6000`. Initial rank: 20 among 39 participant accounts.
 Measured source: `2ae4409184e6d08e1d076f634c6041c4a9fe8c28`.
 
 [Challenge entry](https://www.fherma.io/kernels/polynomial-multiplication/implementations/abhijith-batched-cuda-ntt)
-
