@@ -1,0 +1,7 @@
+This directory includes code from ByteCRT by blucca, licensed under Apache-2.0.
+Source: https://github.com/blucca/fherma-bytecrt
+Revision: 5b54ca3e8d8a3c112cefffb12bb91ccfc1a3bbe0
+The files under core/ are unchanged from native-batched/core/ at that revision.
+The Apache-2.0 license is in THIRD_PARTY_LICENSE.
+The resident-batch adapter, graph orchestration, and general fallback are added here.
+NVIDIA cuPQC is an external dependency supplied by the challenge image.
