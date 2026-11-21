@@ -35,7 +35,7 @@ __global__ void prepare(const uint32_t* a, const uint32_t* b, uint32_t* ab,
     if (word >= 2 * count * k) return;
     const unsigned limb = word % k;
     const size_t coefficient = word / k, local = coefficient % count;
-    const size_t output = (coefficient / count * count + local / n * n + reverse(local % n, log_n)) * k + limb;
+    const size_t output = (coefficient / count * count + local) * k + limb;
     const uint32_t* source = coefficient < count ? a : b;
     ab[output] = limb < l ? source[local * l + limb] : 0;
 }
@@ -46,10 +46,10 @@ __global__ void twist(uint32_t* ab, const uint32_t* factors, const uint32_t* q,
     if (i >= 2 * count) return; // The whole cooperating group takes this branch.
     using Big = typename Descriptor<K>::bigint;
     typename Descriptor<K>::modulus modulus(q);
-    Big value(ab, i), factor(factors, reverse(i % n, log_n));
+    Big value(ab, i), factor(factors, i % n);
     value.mul_montgomery(factor, modulus).store(ab, i);
 }
-template<unsigned K>
+template<unsigned K, bool DIF = false>
 __global__ void butterfly(uint32_t* data, const uint32_t* twiddles, const uint32_t* q,
                           size_t work, unsigned n, unsigned half) {
     const size_t i = (size_t(blockIdx.x) * blockDim.x + threadIdx.x) / Traits<K>::lanes;
@@ -59,10 +59,25 @@ __global__ void butterfly(uint32_t* data, const uint32_t* twiddles, const uint32
     const size_t transform = i / (n / 2);
     const unsigned pair = i % (n / 2), j = pair % half;
     const size_t left = transform * n + pair / half * (2 * half) + j;
-    Big u(data, left), v(data, left + half), factor(twiddles, j * (n / (2 * half))), prime(q);
-    v = v.mul_montgomery(factor, modulus);
-    u.add_mod(v, prime).store(data, left);
-    u.sub_mod(v, prime).store(data, left + half);
+    Big u(data, left), v(data, left + half), prime(q);
+    if constexpr (DIF) {
+        Big sum = u.add_mod(v, prime);
+        Big difference = u.sub_mod(v, prime);
+        // omega^0 is Montgomery one: multiplying by it is the identity.
+        if (j) {
+            Big factor(twiddles, j * (n / (2 * half)));
+            difference = difference.mul_montgomery(factor, modulus);
+        }
+        sum.store(data, left);
+        difference.store(data, left + half);
+    } else {
+        if (j) {
+            Big factor(twiddles, j * (n / (2 * half)));
+            v = v.mul_montgomery(factor, modulus);
+        }
+        u.add_mod(v, prime).store(data, left);
+        u.sub_mod(v, prime).store(data, left + half);
+    }
 }
 template<unsigned K>
 __global__ void product(const uint32_t* ab, uint32_t* c, const uint32_t* q,
@@ -72,7 +87,7 @@ __global__ void product(const uint32_t* ab, uint32_t* c, const uint32_t* q,
     using Big = typename Descriptor<K>::bigint;
     typename Descriptor<K>::modulus modulus(q);
     Big a(ab, i), b(ab, count + i);
-    a.mul_montgomery(b, modulus).store(c, i / n * n + reverse(i % n, log_n));
+    a.mul_montgomery(b, modulus).store(c, i);
 }
 template<unsigned K>
 __global__ void normalize(uint32_t* c, const uint32_t* factors, const uint32_t* q, size_t count, unsigned n) {
@@ -115,8 +130,8 @@ void execute(State& s) {
     twist<K><<<blocks(2 * s.count * Traits<K>::lanes), threads>>>(s.ab, s.twist_table, s.q, s.count, s.n, s.log_n);
     check(cudaGetLastError(), "twist");
     check(cudaEventRecord(s.stage[2]), "record twist");
-    for (unsigned half = 1; half < s.n; half *= 2) {
-        butterfly<K><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.ab, s.forward, s.q, s.count, s.n, half);
+    for (unsigned half = s.n / 2; half; half /= 2) {
+        butterfly<K, true><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.ab, s.forward, s.q, s.count, s.n, half);
         check(cudaGetLastError(), "forward transform");
     }
     check(cudaEventRecord(s.stage[3]), "record forward");
