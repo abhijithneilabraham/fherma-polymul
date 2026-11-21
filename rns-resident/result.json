@@ -1,0 +1,15 @@
+{
+  "source_commit": "0f36b168b675124d836ae6b362c12454c395f205",
+  "path": "rns-resident",
+  "specification": "polynomial-multiplication/negacyclic-batched@1.0.0",
+  "run": "6b0227a7539d6349957e0d0e",
+  "B": 128,
+  "N": 65536,
+  "W": 1747,
+  "cases": 3,
+  "passed": 3,
+  "verify": true,
+  "median_s": 0.164554564,
+  "rank_at_measurement": 18,
+  "finished_at": "2026-11-21T23:26:23.919Z"
+}

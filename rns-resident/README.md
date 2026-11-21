@@ -23,5 +23,6 @@ cmake -B build -DFHERMA_CUDA_ARCH=native
 cmake --build build --parallel 2
 ```
 
-This adapter has no measured GPU result yet. The published ByteCRT result applies
-to its own streaming adapter, not this graph or transfer boundary.
+Official result: 3/3 passed at B=128, N=65,536, W=1,747. Median: 164.554564 ms.
+Recorded rank: 18. Source: `0f36b168b675124d836ae6b362c12454c395f205`.
+The separate streaming adapter has its own timing boundary and result.
