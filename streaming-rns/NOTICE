@@ -1,0 +1,6 @@
+ByteCRT components are from https://github.com/blucca/fherma-bytecrt,
+revision 5b54ca3e8d8a3c112cefffb12bb91ccfc1a3bbe0, native-batched/.
+They are licensed under Apache-2.0; see THIRD_PARTY_LICENSE.
+core/ is unchanged. streaming.cu changes only three outer entry-point names.
+CMake adds the general fallback and its library. The interface and fallback
+wrapper are added here. NVIDIA cuPQC is supplied by the challenge image.
