@@ -4,6 +4,7 @@
 #include <cuda_runtime.h>
 #include <limits>
 #include <memory>
+#include <chrono>
 
 namespace {
 constexpr unsigned threads = 256;
@@ -91,7 +92,10 @@ struct State {
     size_t count, words;
     uint32_t *a = nullptr, *b_input = nullptr, *ab = nullptr, *c = nullptr;
     uint32_t *q = nullptr, *forward = nullptr, *inverse = nullptr, *twist_table = nullptr, *scale = nullptr;
+    cudaEvent_t stage[8]{};
+    double output_allocation_ms = 0;
     ~State() {
+        for (auto event : stage) if (event) cudaEventDestroy(event);
         for (auto p : {a, b_input, ab, c, q, forward, inverse, twist_table, scale}) cudaFree(p);
     }
 };
@@ -104,25 +108,33 @@ void constant(uint32_t*& p, const setup::Words& values) {
 }
 template<unsigned K>
 void execute(State& s) {
+    check(cudaEventRecord(s.stage[0]), "record start");
     prepare<<<blocks(2 * s.count * K), threads>>>(s.a, s.b_input, s.ab, s.count, s.n, s.l, K, s.log_n);
     check(cudaGetLastError(), "prepare");
+    check(cudaEventRecord(s.stage[1]), "record prepare");
     twist<K><<<blocks(2 * s.count * Traits<K>::lanes), threads>>>(s.ab, s.twist_table, s.q, s.count, s.n, s.log_n);
     check(cudaGetLastError(), "twist");
+    check(cudaEventRecord(s.stage[2]), "record twist");
     for (unsigned half = 1; half < s.n; half *= 2) {
         butterfly<K><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.ab, s.forward, s.q, s.count, s.n, half);
         check(cudaGetLastError(), "forward transform");
     }
+    check(cudaEventRecord(s.stage[3]), "record forward");
     product<K><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.ab, s.c, s.q, s.count, s.n, s.log_n);
     check(cudaGetLastError(), "pointwise product");
+    check(cudaEventRecord(s.stage[4]), "record product");
     for (unsigned half = 1; half < s.n; half *= 2) {
         const size_t work = s.count / 2;
         butterfly<K><<<blocks(work * Traits<K>::lanes), threads>>>(s.c, s.inverse, s.q, work, s.n, half);
         check(cudaGetLastError(), "inverse transform");
     }
+    check(cudaEventRecord(s.stage[5]), "record inverse");
     normalize<K><<<blocks(s.count * Traits<K>::lanes), threads>>>(s.c, s.scale, s.q, s.count, s.n);
     check(cudaGetLastError(), "normalize");
+    check(cudaEventRecord(s.stage[6]), "record normalize");
     pack<<<blocks(s.words), threads>>>(s.c, s.a, s.words, s.l, K);
     check(cudaGetLastError(), "pack");
+    check(cudaEventRecord(s.stage[7]), "record pack");
     check(cudaDeviceSynchronize(), "finish all device work");
 }
 } // namespace
@@ -145,6 +157,7 @@ void* fherma_init(const fherma::Point& p) {
     allocate(s.ab, 2 * s.count * s.k); allocate(s.c, s.count * s.k);
     constant(s.q, plan.field.q); constant(s.forward, plan.forward); constant(s.inverse, plan.inverse);
     constant(s.twist_table, plan.twist_r2); constant(s.scale, plan.scale_normal);
+    for (auto& event : s.stage) check(cudaEventCreate(&event), "create stage event");
     return state.release();
 }
 fherma::Outputs fherma_run(void* state, const fherma::Inputs& input) {
@@ -153,9 +166,10 @@ fherma::Outputs fherma_run(void* state, const fherma::Inputs& input) {
     if (input.a.shape != shape || input.b.shape != shape || input.a.data.size() != s.words || input.b.data.size() != s.words)
         throw std::runtime_error("input layout does not match point");
     fherma::Outputs output;
+    const auto allocation_start = std::chrono::steady_clock::now();
     output.c.shape = shape; output.c.data.resize(s.words);
-    check(cudaMemcpy(s.a, input.a.data.data(), s.words * sizeof(uint32_t), cudaMemcpyHostToDevice), "copy a");
-    check(cudaMemcpy(s.b_input, input.b.data.data(), s.words * sizeof(uint32_t), cudaMemcpyHostToDevice), "copy b");
+    s.output_allocation_ms = std::chrono::duration<double, std::milli>(
+        std::chrono::steady_clock::now() - allocation_start).count();
     switch (s.k) {
         case 8: execute<8>(s); break;
         case 32: execute<32>(s); break;
@@ -163,7 +177,33 @@ fherma::Outputs fherma_run(void* state, const fherma::Inputs& input) {
         case 128: execute<128>(s); break;
         default: throw std::runtime_error("invalid limb dispatch");
     }
+    return output;
+}
+// Transfer hooks preserve the packed host representation byte for byte. Every
+// transform and pack kernel remains in execute(), which synchronizes before return.
+void fherma_h2d(void* state, const fherma::Inputs& input) {
+    auto& s = *static_cast<State*>(state);
+    const std::vector<int64_t> shape = {s.b, s.n, s.l};
+    if (input.a.shape != shape || input.b.shape != shape || input.a.data.size() != s.words || input.b.data.size() != s.words)
+        throw std::runtime_error("input layout does not match point");
+    check(cudaMemcpy(s.a, input.a.data.data(), s.words * sizeof(uint32_t), cudaMemcpyHostToDevice), "copy a");
+    check(cudaMemcpy(s.b_input, input.b.data.data(), s.words * sizeof(uint32_t), cudaMemcpyHostToDevice), "copy b");
+}
+fherma::Outputs fherma_d2h(void* state, fherma::Outputs output) {
+    auto& s = *static_cast<State*>(state);
     check(cudaMemcpy(output.c.data.data(), s.a, s.words * sizeof(uint32_t), cudaMemcpyDeviceToHost), "copy answer");
     return output;
+}
+std::vector<std::pair<std::string, double>> fherma_metrics(void* state) {
+    auto& s = *static_cast<State*>(state);
+    const char* names[] = {"prepare_ms", "twist_ms", "forward_ms", "product_ms", "inverse_ms", "normalize_ms", "pack_ms"};
+    std::vector<std::pair<std::string, double>> result;
+    for (unsigned i = 0; i < 7; ++i) {
+        float ms = 0;
+        check(cudaEventElapsedTime(&ms, s.stage[i], s.stage[i + 1]), "read stage time");
+        result.emplace_back(names[i], ms);
+    }
+    result.emplace_back("output_allocation_ms", s.output_allocation_ms);
+    return result;
 }
 void fherma_free(void* state) { delete static_cast<State*>(state); }
