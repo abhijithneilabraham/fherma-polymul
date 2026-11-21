@@ -18,5 +18,12 @@ The challenge image provides CUDA and cuPQC. The default architecture is the
 GPU visible to the build. Use `-DFHERMA_CUDA_ARCH=sm_89` for a CPU-hosted compile
 check targeting that architecture.
 
-Qualification: host math tests and CUDA compile/link pass. Official GPU
-correctness and performance results are pending.
+## Measured result
+
+All three official cases passed at B=128, N=65,536, W=1,747. Median: 1.645653063 s
+on `fherma-gpu-rtx6000`. Initial rank: 20 among 39 participant accounts.
+
+Measured source: `2ae4409184e6d08e1d076f634c6041c4a9fe8c28`.
+
+[Challenge entry](https://www.fherma.io/kernels/polynomial-multiplication/implementations/abhijith-batched-cuda-ntt)
+
