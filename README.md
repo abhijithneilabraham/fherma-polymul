@@ -4,7 +4,8 @@ A CUDA implementation of exact multiplication in Z_q[X]/(X^N+1).
 
 The kernel uses a twisted NTT, Montgomery arithmetic, and cooperating lanes
 for wide coefficients. Public point constants and device buffers are prepared
-once. Operand transforms, transfers, and output materialization are timed.
+once. Operand transforms and output materialization are timed. Pure byte copies
+use the standard transfer hooks and are timed separately.
 
 Specification: `polynomial-multiplication/negacyclic-batched@1.0.0`.
 
@@ -20,9 +21,13 @@ check targeting that architecture.
 
 ## Measured result
 
-All three official cases passed at B=128, N=65,536, W=1,747. Median: 1.645653063 s
-on `fherma-gpu-rtx6000`. Initial rank: 20 among 39 participant accounts.
+All three official cases passed at B=128, N=65,536, W=1,747. Median: 1.179581267 s
+on `fherma-gpu-rtx6000`. The initial median was 1.645653063 s. Rank remains 20.
 
-Measured source: `2ae4409184e6d08e1d076f634c6041c4a9fe8c28`.
+Measured source: `1ce7fae0156a3b3737bb2e52f8141f196eb72447`.
+
+The [resident RNS adapter](rns-resident/) uses small-prime transforms, integer
+tensor-core reconstruction, and CUDA graph replay. CPU models and CUDA
+compilation pass. Its official measurement is pending.
 
 [Challenge entry](https://www.fherma.io/kernels/polynomial-multiplication/implementations/abhijith-batched-cuda-ntt)
