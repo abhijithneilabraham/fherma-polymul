@@ -1,0 +1,24 @@
+{
+  "source_commit": "34bdb4d071286d04a5076615601074689fd61b34",
+  "artifact_path": "warp-encode",
+  "run": "6b02c006539d634995919de7",
+  "runner": "fherma-gpu-rtx6000",
+  "point": "B128-N65536-W1747",
+  "cases": 3,
+  "passed": 3,
+  "verify": true,
+  "median_s": 0.077119967,
+  "rank": 17,
+  "transfer_stages": {
+    "h2d_s": {
+      "median": 0.154719782,
+      "total": 0.44549538299999997
+    },
+    "d2h_s": {
+      "median": 0.0744272,
+      "total": 0.21371115699999998
+    }
+  },
+  "transfer_boundary": "pure byte copies and host output construction separately timed",
+  "profile_scope": "last invocation, not medians"
+}
