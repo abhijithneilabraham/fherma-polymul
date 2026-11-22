@@ -1,0 +1,18 @@
+{
+  "source_commit": "7d1d7052a7a3455c50462d3c0da4885a250229ba",
+  "path": "streaming-rns",
+  "specification": "polynomial-multiplication/negacyclic-batched@1.0.0",
+  "run": "6b023036539d6349957fae4d",
+  "B": 128,
+  "N": 65536,
+  "W": 1747,
+  "cases": 3,
+  "passed": 3,
+  "verify": true,
+  "median_s": 0.089184818,
+  "min_s": 0.089153717,
+  "max_s": 0.102052059,
+  "rank_at_measurement": 17,
+  "finished_at": "2026-11-22T00:03:13.318Z",
+  "timing": "all copies, arithmetic, and owned output construction included"
+}
