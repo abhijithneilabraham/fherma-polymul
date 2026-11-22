@@ -1,0 +1,24 @@
+{
+  "source_commit": "55b621eef5ffd3ad519b6bc79435349c31d3f2eb",
+  "artifact_path": "alpha-bounds",
+  "run": "6b036c8d539d634995ac15b1",
+  "runner": "fherma-gpu-rtx6000",
+  "point": "B128-N65536-W1747",
+  "passed": 3,
+  "cases": 3,
+  "verify": true,
+  "median_s": 0.076064133,
+  "transfer_stages": {
+    "h2d_s": {
+      "median": 0.128817833,
+      "total": 0.38653800299999996
+    },
+    "d2h_s": {
+      "median": 0.064675916,
+      "total": 0.20690542299999998
+    }
+  },
+  "selected_best": false,
+  "recorded_rank": 17,
+  "measured_at": "2026-11-22T22:32:22.387Z"
+}

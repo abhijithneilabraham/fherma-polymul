@@ -1,0 +1,24 @@
+{
+  "source_commit": "6e8eb0ac9862956ebb72cd6e9ae2d10cbea16fa7",
+  "artifact_path": "warp-ntt",
+  "run": "6b037e3f539d634995ad9f55",
+  "runner": "fherma-gpu-rtx6000",
+  "point": "B128-N65536-W1747",
+  "passed": 3,
+  "cases": 3,
+  "verify": true,
+  "median_s": 0.067041671,
+  "transfer_stages": {
+    "h2d_s": {
+      "median": 0.129363585,
+      "total": 0.388142326
+    },
+    "d2h_s": {
+      "median": 0.064918957,
+      "total": 0.194451757
+    }
+  },
+  "selected_best": true,
+  "recorded_rank": 15,
+  "measured_at": "2026-11-22T23:48:13.854Z"
+}
