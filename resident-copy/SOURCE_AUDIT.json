@@ -1,0 +1,21 @@
+{
+  "math_base_commit": "0f36b168b675124d836ae6b362c12454c395f205",
+  "kernel_launch_body_unchanged_except_diagnostic_event_records": true,
+  "changes": [
+    "raw pinned transfer staging",
+    "owned output formed by byte-copy hook",
+    "external event record nodes for valid replay timing",
+    "cleanup-time metadata logging"
+  ],
+  "bytecrt_core_files": {
+    "g1-crt.cuh": "d932c1efe89467d4d5ad37a3d8f5220f21da8ee4e6dd5b862915fdf98d974b12",
+    "io-copy.cpp": "13fd9a1109f0c1b25a55bb89db52c6bf35ae22d06e399dbb34ad4f9715f5fe1a",
+    "ntt-pipeline.cuh": "af383f13c4743e0bcbdf18f78fef94fde938c3588cc36146ae150faf04fae4eb",
+    "ntt-weighted.cuh": "7ce451b0c8f8f9eea86fd24dc34665efb7f70b34cb355f8be43349bea280186b",
+    "rns-encode-mma.cuh": "6f0f9d007986da5b9caa4732500d203addebf82b7f698a98cc94322891397bcb",
+    "rns-encode.cuh": "a9be3a744d93d0de151bcdbbefb6de86992af30316d4682ef1bf3760c2eb63db",
+    "rns-plan.hpp": "fe8d662cd8791933fac88c5332b51f406f7eb95a2384df9e18f4273b41325f17",
+    "solve.cu": "ac5d45ba5f7a201dfa2f03cd6cee25bb59670d5334c7df9d1808fa76f47d1a3f",
+    "vector-copy.cpp": "08f116685bd4142472dad3eebff0330b52fb20756941422dbf2b8a81fe239801"
+  }
+}
