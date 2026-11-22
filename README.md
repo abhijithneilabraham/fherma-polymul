@@ -1,33 +1,28 @@
 # Batched polynomial multiplication
 
-A CUDA implementation of exact multiplication in Z_q[X]/(X^N+1).
+Exact CUDA multiplication in Z_q[X]/(X^N+1).
 
-The measured kernel uses small-prime NTTs and integer tensor-core reconstruction.
-Four product slots share input-copy, compute and output-copy queues. Pinned
-staging and parallel host copies keep data moving. All transfers and host output
-construction are timed in this version.
+The kernel uses small-prime NTTs and integer tensor-core reconstruction. A CUDA
+graph computes the resident batch. Pinned copy hooks move raw bytes; all arithmetic
+and device completion remain in `run`. The output has independent host ownership.
 
 Specification: `polynomial-multiplication/negacyclic-batched@1.0.0`.
 
 ```sh
-cmake -S streaming-rns -B build -DCMAKE_BUILD_TYPE=Release
+cmake -S resident-copy -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build --parallel 2
 ./build/solution POINT_DIRECTORY
 ```
 
-The challenge image provides CUDA and cuPQC. The default architecture is the
-GPU visible to the build. Use `-DFHERMA_CUDA_ARCH=sm_89` for a CPU-hosted compile
-check targeting that architecture.
+The challenge image provides CUDA and cuPQC.
 
 ## Measured result
 
-All three official cases passed at B=128, N=65,536, W=1,747. Median: 89.184818 ms
-on `fherma-gpu-rtx6000`. Recorded rank: 17.
+B=128, N=65,536, W=1,747: **77.362807 ms**, all three official cases passed.
+Recorded rank: **17** on `fherma-gpu-rtx6000`.
 
-Measured source: `7d1d7052a7a3455c50462d3c0da4885a250229ba`, path `streaming-rns`.
+Measured source: `b271b1ad3a814e58b4069a29c5168be16790c871`, path `resident-copy`.
+Copies are measured separately: median H2D 145.836771 ms; D2H 66.188752 ms.
+The prior [streaming version](streaming-rns/) scored 89.184818 ms with copies included.
 
-The [resident copy candidate](resident-copy/) keeps the graph arithmetic and
-uses pure pinned-copy hooks. It constructs the owned host output during download.
-This candidate is being qualified separately.
-
-[Challenge entry](https://www.fherma.io/kernels/polynomial-multiplication/implementations/abhijith-streaming-rns)
+[Challenge entry](https://www.fherma.io/kernels/polynomial-multiplication/implementations/abhijith-resident-copy-rns)

@@ -13,4 +13,9 @@ The host copies use the ByteCRT parallel memcpy/memmove wrapper, with its origin
 license and notices. Point-only staging buffers are allocated at setup. A general
 fallback remains for other points. The runtime log retains last-case phase times.
 
-This candidate is unmeasured. The separate retained streaming result is 89.184818 ms.
+Three official cases passed at **77.362807 ms**, rank **17**.
+Measured source: `b271b1ad3a814e58b4069a29c5168be16790c871`.
+Pure copies are measured separately: H2D median 145.836771 ms and D2H median
+66.188752 ms. Every case stayed within the transfer limits.
+
+The separate streaming result is 89.184818 ms with copies included.
