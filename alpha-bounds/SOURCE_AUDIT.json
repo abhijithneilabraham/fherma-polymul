@@ -1,0 +1,7 @@
+{
+  "base_commit": "393629bbf2afa6c5fc9d0ec4d54e64e91e50296d",
+  "base_path": "warp-alpha",
+  "only_executable_change": "__launch_bounds__(224, 3) on g1_crt32_warp_alpha",
+  "mathematics": "identical cooperative alpha, MMA, carries, reducers, encoding and transforms",
+  "native_GPU_executions": 0
+}
