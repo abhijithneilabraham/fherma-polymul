@@ -1,0 +1,22 @@
+{
+  "source_commit": "d5f4b0e95639051cbe65c20e9f3423e5e439a333",
+  "artifact_path": "fused-input",
+  "run": "6b02eab1539d63499599111e",
+  "runner": "fherma-gpu-rtx6000",
+  "point": "B128-N65536-W1747",
+  "passed": 3,
+  "cases": 3,
+  "verify": true,
+  "median_s": 0.08772501,
+  "transfer_stages": {
+    "h2d_s": {
+      "median": 0.129355251,
+      "total": 0.388303199
+    },
+    "d2h_s": {
+      "median": 0.064372449,
+      "total": 0.19354778
+    }
+  },
+  "selected_best": false
+}
