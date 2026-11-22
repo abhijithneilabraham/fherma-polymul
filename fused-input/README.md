@@ -1,0 +1,12 @@
+# Fused input experiment
+
+This candidate keeps the verified warp encoder's arithmetic and moves its result
+straight into the first NTT stage within the same block. Eight primes share
+one input tile. Their canonical residues remain in shared memory until the
+unchanged cuPQC stage consumes them. No transposed global residue array is
+written or read by this path.
+
+The middle NTT stages, inverse stage, CRT, pure transfer hooks and exactness bound
+remain unchanged. The runtime log reports conversion plus first NTT as one phase.
+Input reads repeat across prime groups; cache behavior and serial transforms
+within a block can offset the saved intermediate traffic. GPU results are pending.

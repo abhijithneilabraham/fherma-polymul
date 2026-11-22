@@ -1,0 +1,34 @@
+{
+  "base_commit": "34bdb4d071286d04a5076615601074689fd61b34",
+  "base_path": "warp-encode",
+  "unchanged_core_files": {
+    "core/g1-crt.cuh": "d932c1efe89467d4d5ad37a3d8f5220f21da8ee4e6dd5b862915fdf98d974b12",
+    "core/io-copy.cpp": "13fd9a1109f0c1b25a55bb89db52c6bf35ae22d06e399dbb34ad4f9715f5fe1a",
+    "core/ntt-pipeline.cuh": "af383f13c4743e0bcbdf18f78fef94fde938c3588cc36146ae150faf04fae4eb",
+    "core/ntt-weighted.cuh": "7ce451b0c8f8f9eea86fd24dc34665efb7f70b34cb355f8be43349bea280186b",
+    "core/rns-encode-mma.cuh": "6f0f9d007986da5b9caa4732500d203addebf82b7f698a98cc94322891397bcb",
+    "core/rns-encode.cuh": "a9be3a744d93d0de151bcdbbefb6de86992af30316d4682ef1bf3760c2eb63db",
+    "core/rns-plan.hpp": "fe8d662cd8791933fac88c5332b51f406f7eb95a2384df9e18f4273b41325f17",
+    "core/solve.cu": "ac5d45ba5f7a201dfa2f03cd6cee25bb59670d5334c7df9d1808fa76f47d1a3f",
+    "core/vector-copy.cpp": "08f116685bd4142472dad3eebff0330b52fb20756941422dbf2b8a81fe239801"
+  },
+  "unchanged_files": [
+    "warp-output.cuh",
+    "host_copy.hpp",
+    "wide.cu",
+    "field_setup.hpp",
+    "fherma.h",
+    "main.cpp"
+  ],
+  "new_kernel": "fused-input.cuh",
+  "new_index_helpers": "fused-layout.hpp",
+  "replaced_graph_launches": [
+    "encoder A",
+    "encoder B",
+    "first forward stage"
+  ],
+  "retained_stage_contract": "128 threads, same primes, Montgomery entrance/twist, SDK stage_1_execute, SDK stage_1_store with same plane and id",
+  "intermediate": "canonical local-prime residues in shared memory; no ab_t writes or reads",
+  "profiling": "combined encode/forward interval, no invented per-stage split",
+  "qualification": "CPU buffer/ownership and modulo tests do not replace native GPU verification"
+}
