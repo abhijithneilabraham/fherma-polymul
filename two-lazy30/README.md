@@ -1,0 +1,7 @@
+# Defer reductions inside 30-bit transforms
+
+The public Poulpy GPU backend uses 30-bit primes and carries wider representatives through its butterflies. This experiment applies the same arithmetic bounds to the register-local two-digit graph. The public backend's result is specific to that code and benchmark configuration. [Poulpy butterfly source](https://github.com/poulpy-fhe/poulpy/blob/v0.10.0/backends/poulpy-gpu-portable/src/ntt4x30/ntt.rs)
+
+For a prime below 2^30, four times the prime fits in an unsigned word. The odd-root forward step reduces its lower operand to the interval from zero to 2p and uses the raw Shoup remainder for the rotated upper operand. The sum and difference fit below 4p. The cyclic forward and inverse transforms carry representatives below 2p. Multiplying two such values yields less than p × 2^32, so the pointwise Montgomery product can reduce them directly. The final inverse writes canonical residues for the unchanged CRT arithmetic.
+
+The ranked prime count grows from 58 to 60 and the auxiliary count from 30 to 32. Each set exceeds four times the signed convolution bound with the same digit split. On the ranked point there are 3.45% more transform planes. CRT increases from fifteen to sixteen tensor tiles along the residue dimension. The two extra primes must earn back that cost through cheaper arithmetic. The compiler comparison reports the forward, middle and inverse instruction mixes. The complete native batch determines the tradeoff.
