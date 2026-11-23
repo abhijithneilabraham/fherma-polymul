@@ -40,7 +40,15 @@ def check(exe,alpha_exe,work,n,w,gap):
                     tile=(k//32)*(count//2)+j//2
                     word=128*tile+64*half+32*((k%32)//16)+4*(4*(j%2)+byte)+(k%16)//4
                     encode[4*word+k%4]=(weight>>(8*byte))&255
-    assert encode==read('encode')
+    # The independent byte-dot layout above has four 128-byte planes per tile.
+    # Transpose them into one 16-byte group per lane for the actual device table.
+    tiled_encode=bytearray()
+    for tile in range(0,len(encode),512):
+        for lane in range(32):
+            for plane in range(4):
+                begin=tile+128*plane+4*lane
+                tiled_encode.extend(encode[begin:begin+4])
+    assert tiled_encode==read('encode')
     inv=[pow(2*(M//p),-1,p) for p in primes]
     assert integers('crt_inverse')==inv+inv
     cofactor=[M//p for p in primes]
