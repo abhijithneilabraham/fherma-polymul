@@ -1,0 +1,7 @@
+# Reconstruct four columns while preserving full sectors in both directions
+
+The fused winner's middle transform writes complete sectors. Its one-column inverse requests four times as many sector bytes as it uses. The paired output fixes its loads on a layout where the middle stores use half sectors. Group four neighboring columns so each inverse load and each middle store uses a full sector. The decoder cooperates across four columns in one warp and keeps the two widest butterflies in registers.
+
+The two intermediate boundary operations request 7.25 GiB per ranked batch, down from 10.875 GiB in the paired layout and 18.125 GiB in the one-column fused winner. These are request counts before cache effects. The four-column inverse needs twelve exchanges per sign per four columns, down from sixteen for two paired warps and twenty for four single-column warps.
+
+The tensor stage uses one weight fragment for both columns in a pair. The first pair finishes carries while the second pair waits in its residue tile. Both pairs reuse the same carry scratch. This costs 92,672 bytes of dynamic shared memory at the ranked shape and limits the GPU to one such block per SM by shared capacity. The exact fixture checks all four columns, the scratch reuse and every untouched address. Native timing needs to show that fewer requests offset the occupancy cost. [Fused control](../two-shortjoint/README.md) · [Paired control](../two-shortduoweights/README.md)
