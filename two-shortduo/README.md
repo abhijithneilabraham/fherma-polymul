@@ -1,0 +1,7 @@
+# Fuse the inverse and CRT for two neighboring columns
+
+The fused sector layout writes neighboring columns together. The one-column decoder sends a separate warp to each column, requesting the same eight sectors twice. Here a warp reads both columns in two contiguous 32-word loads per sign, requesting eight full sectors in total. It holds two rows per lane. The widest butterfly stays in registers, so eight warp exchanges replace ten across the two columns.
+
+A 224-thread block writes two input matrices into shared memory. Both columns take turns using its same tensor accumulator and output scratch. The count of CRT operations per coefficient follows the parent. The ranked block uses 46,336 bytes of shared storage versus 30,464 bytes for one column. The output grid has 1,024 blocks versus 2,048 per ranked product. Two blocks can fit on one SM by shared memory, while up to four one-column blocks can fit by the same limit. The block also runs the two CRT sequences serially, so whole-batch timing will determine whether better coalescing and fewer inverse shuffles repay that geometry.
+
+At B128 the middle-to-output interface requests 7.25 GiB of sectors, down from 14.5 GiB in the one-column sector control. Repeated requests in the control can already hit cache. The host test runs both columns together on both widths, compares all limbs against Python integers, and checks untouched output addresses. [One-column sector layout](../two-shortsector/README.md)
