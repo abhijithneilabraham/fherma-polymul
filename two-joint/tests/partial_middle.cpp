@@ -1,6 +1,7 @@
 // Run the submitted block on cooperative CPU fibers, including every barrier.
 #define _XOPEN_SOURCE 600
 #include <ucontext.h>
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <functional>
