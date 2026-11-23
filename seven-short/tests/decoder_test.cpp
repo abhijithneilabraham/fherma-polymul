@@ -70,7 +70,7 @@ void check(){
     constexpr uint32_t gap=W==1747?9699327:43646975;
     std::vector<uint32_t> q(L,UINT32_MAX);q.front()=0u-gap;q.back()=(1u<<(W%32))-1;
     auto plan=seven_plan::make(N,W,q);auto tables=bytecrt::warp_ntt::make_tables(plan.transform);
-    std::vector<uint32_t> input(size_t(N)*7*Count,0),out(size_t(N)*L,UINT32_MAX);
+    std::vector<uint32_t> input(static_cast<size_t>(N)*7*Count,0),out(static_cast<size_t>(N)*L,UINT32_MAX);
     uint32_t expected[K][7*Count];
     for(auto& row:expected)for(auto& x:row)std::cin>>x;
     assert(std::cin);
