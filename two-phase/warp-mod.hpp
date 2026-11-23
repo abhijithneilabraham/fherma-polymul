@@ -34,7 +34,9 @@ WARP_HD uint32_t multiply_phase(uint32_t a,uint32_t code,uint32_t p) {
     const uint32_t value=high_word(code,p);
     const uint32_t quotient=high_word(a,code);
     const uint32_t residue=a*value-quotient*p;
-    return (residue>>31)?residue+p:residue;
+    // Adding p wraps only for a negative mathematical residue.
+    const uint32_t corrected=residue+p;
+    return corrected<residue?corrected:residue;
 }
 WARP_HD uint32_t multiply_twiddle(uint32_t a,const Twiddle& w,const Mod& m){
     #ifdef __CUDA_ARCH__
