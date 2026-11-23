@@ -1,0 +1,7 @@
+# Apply the short inverse as an exact tensor matrix
+
+Test a different compute path for the selected graph's slow inverse. A block processes 32 columns from one plane. It loads two sixteen-column tiles from the middle output. Each INT8 tensor dot interprets a 32-bit residue as four bytes. The fixed matrix includes the inverse odd root and the base-256 place value. Four exact byte sums give one residue over its original prime. Two lanes exchange partial sums so each can finish an output independently.
+
+A dot sums at most 128 terms. Its unsigned pre-reduction integer is below 128 × 255 × p, or 2^46. The existing 48-bit reciprocal reducer covers that range. The 32-point matrices occupy 928 KiB at the ranked width and are shared between the two signs. Each block computes both of its sixteen-column halves with the same table operands. The output is transposed in shared memory and written to the original CRT addresses. The ranked batch has 121,634,816 warp matrix instructions and requests 14.5 GiB of fixed matrix data before cache reuse. Each prime's 16 KiB weight table is reused across its column blocks.
+
+The host emulation checks both prime sets, multiple sign planes, direct odd-root inversion and every untouched output address. Its Blackwell build checks the integer tensor instructions and resource use. The ranked batch will show whether moving work to the tensor cores repays the matrix traffic and shared-memory staging.
