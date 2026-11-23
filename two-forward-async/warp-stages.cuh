@@ -44,7 +44,12 @@ __global__ void forward(const uint32_t* input,uint32_t* output,
     __shared__ __align__(16) uint32_t phase_tile[8*K];
     unsigned lane=threadIdx.x&31,warp=threadIdx.x>>5,first=blockIdx.x*8,id=first+warp;
     unsigned plane=blockIdx.y,prime=plane%P;const Mod m=mods[prime];
-    for(unsigned word=4*threadIdx.x;word<8*K;word+=4*blockDim.x) {
+    constexpr unsigned copy_words=4;
+    constexpr unsigned threads=256;
+    static_assert((8*K)%(copy_words*threads)==0);
+    #pragma unroll
+    for(unsigned part=0;part<8*K/(copy_words*threads);++part) {
+        unsigned word=copy_words*(threadIdx.x+threads*part);
         unsigned offset=(word/8)*256+first+word%8;
         const auto* source=phases+size_t(prime)*N+offset;
 #if defined(__CUDA_ARCH__) && __CUDA_ARCH__ >= 800
