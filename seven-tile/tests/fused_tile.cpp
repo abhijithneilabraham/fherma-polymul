@@ -90,7 +90,7 @@ void check() {
     unsigned gap=W==1747?9699327:43646975;
     Words q(L,UINT32_MAX);q[0]=0u-gap;q.back()=(1u<<(W%32))-1;
     auto plan=seven_plan::make(N,W,q);auto tables=bytecrt::warp_ntt::make_tables(plan.transform);
-    std::vector<uint32_t> input(size_t(N)*L),out(size_t(7)*Count*N,UINT32_MAX);
+    std::vector<uint32_t> input(static_cast<size_t>(N)*L),out(size_t(7)*Count*N,UINT32_MAX);
     std::mt19937 rng(N);
     for(unsigned i=0;i<K;++i){
         size_t start=size_t(id+256*i)*L;
