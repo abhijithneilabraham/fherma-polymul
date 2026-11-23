@@ -1,0 +1,9 @@
+# Fold forward rotation factors into the encoder weights
+
+The three-kernel polynomial product reads a byte matrix to convert wide inputs into residues. Each ranked warp then holds eight values per lane for the forward transform. The first three transform stages combine these registers at distances of 128, 64 and 32 rows.
+
+Let s = psi^256, where psi is the primitive root for the negacyclic polynomial. An encoder weight table for rows 32g through 32g+31 includes the scale s^(32g). When the forward step pairs two rows separated by d ≥ 32, the scale on the right is s^d times the scale on the left. Divide that butterfly's root by s^d. Both results then have the left scale. After processing distances 128, 64 and 32, every surviving scale is one. All lower butterflies use their original roots. The same argument applies to the smaller point, which starts at distance 64.
+
+At distance 128 every ranked pair now uses a unit root. At the next two distances, the first group at each distance also uses a unit root. This removes seven of twelve modular multiplications per lane in the first three stages, or **1,702,887,424 fixed modular products per ranked batch**. It adds no matrix instructions. Each MMA still fetches the same number of words, but eight row-group tables occupy 464 KiB instead of 58 KiB. Cache behavior and the compiled kernel determine whether the savings translate to GPU time.
+
+The packed byte tests independently reproduce all row-group matrices. The full-block test executes the GPU source for both operands at both widths and compares all 74,752 checked spectrum words with direct evaluation from the original wide coefficients. It also checks the 98,304 gather addresses that connect the forward and middle kernels. Compare the ranked batch against the fused signed-input parent.
