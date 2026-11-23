@@ -36,6 +36,7 @@ __global__ __launch_bounds__(224, 3) void g1_crt32_warp_alpha(const uint8_t* __r
     const unsigned tid = threadIdx.x;
     const unsigned lane = tid & 31, warp = tid >> 5;
     const unsigned g = lane >> 2, t = lane & 3;
+    const unsigned k_lane = 4 * t;
     const unsigned block = block_begin + blockIdx.x;
     const unsigned id = Transposed ? block % transpose_m : 0;
     const unsigned first_row = (Transposed ? block / transpose_m : block) * MT;
