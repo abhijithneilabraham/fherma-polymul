@@ -95,7 +95,7 @@ void check(){
     const unsigned gap=W==1747 ? 9699327 : 43646975;
     std::vector<uint32_t> q(L,UINT32_MAX);q.front()=0u-gap;q.back()=(1u<<(W%32))-1;
     auto plan=two_digit::make(N,W,q);auto tables=make_tables(plan.transform);
-    std::vector<uint32_t> left(size_t(N)*L),right(left.size());
+    std::vector<uint32_t> left(static_cast<size_t>(N)*L),right(left.size());
     std::vector<uint32_t> out(size_t(4)*Count*N,UINT32_MAX);
     std::mt19937 rng(1729);
     for(unsigned operand=0;operand<2;++operand){
