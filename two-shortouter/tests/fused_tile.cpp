@@ -172,7 +172,8 @@ void check() {
         for(auto word:output)assert(word==UINT32_MAX);
     }
     constexpr unsigned pad=W==1747?480:256;
-    std::vector<U> inverse_input(size_t(P)*N,UINT32_MAX), weighted(size_t(N)*pad/4,UINT32_MAX);
+    std::vector<U> inverse_input(static_cast<size_t>(P)*N,UINT32_MAX);
+    std::vector<U> weighted(static_cast<size_t>(N)*pad/4,UINT32_MAX);
     for(unsigned column_group : {0u,J/4-1}) {
         unsigned group=(P-1)/8;
         for(unsigned plane=8*group;plane<P;++plane) {
