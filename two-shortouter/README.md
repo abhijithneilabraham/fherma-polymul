@@ -1,0 +1,7 @@
+# Use 32-point outer transforms on the two-digit kernel
+
+The earlier input fusion used a 1,024-thread block with 96 KiB of shared memory and took 54.205 ms. It kept a 256-point outer transform on the ranked workload. This design uses a 32-point outer transform and 2,048-point cyclic rows. Each ranked input block handles four complete columns with six warps and 48 KiB of shared memory. It packs the wide coefficients once and reuses them across every prime pair.
+
+The forward warp owns four columns and keeps four transformed rows per lane. It shares phase loads between the two signed channels, saving 3.625 GiB of requested phase bytes per ranked batch before cache reuse. The cyclic kernel splits each long row into eight-point register transforms and 256-point warp transforms. It handles two rows using two block barriers. The inverse warp consumes four columns in full sectors and writes four complete sectors per warp store. The reconstruction sees one 32-coefficient column per block.
+
+Dropping the encoded buffer still removes 14.5 GiB of logical intermediate traffic per ranked batch. The 48 KiB input block and the longer middle rows change occupancy and arithmetic. Both shapes execute the submitted forward, cyclic, inverse and decoder blocks in the CPU fixtures, including the last prime wave and the outermost columns. Only the native batch can determine whether this factorization repays its cost.
