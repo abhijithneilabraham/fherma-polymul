@@ -1,0 +1,5 @@
+# Two-digit polynomial multiplication
+
+Split each large coefficient at bit 880. The upper digit has at most 867 bits. Because the modulus is 2^1747 − 9699327, the square of the digit base is equivalent to 2^13 × 9699327. Choose 58 small primes that each have a square root of this constant. Evaluate the two digits at the positive and negative root and multiply each evaluation using the odd-root polynomial transform. This requires 116 transform planes. The selected ordinary RNS kernel uses 114. The smaller challenge size uses a 440-bit split and 30 primes.
+
+One tensor input tile converts the lower and upper halves of sixteen coefficients. After the inverse transform, sum and difference separate the two signed results. Each has its own centered CRT quotient. A single byte matrix combines both with the proper digit shift into the final reduced output. Kernel arithmetic runs inside the timed graph. Native timing determines whether the smaller conversion offsets the transform and reconstruction costs.
