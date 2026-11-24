@@ -1,0 +1,7 @@
+{
+  "base_path": "four-register-pipeline",
+  "base_commit": "7befb552745f01ea2e3d428f2e44f879654a2efc",
+  "changed_stage": "Recover the four digits and their CRT corrections in one warp.",
+  "arithmetic": "The 23-bit fixed fraction has worst absolute sum error below 0.000006 for thirty primes. The signed CRT margin is at least 0.25.",
+  "native_GPU_executions": 0
+}
