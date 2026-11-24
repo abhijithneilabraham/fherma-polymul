@@ -1,0 +1,5 @@
+# Multiply the last four terms as a quadratic polynomial
+
+The middle kernel stops the 256-point transform two levels early. Each group of four values now needs a cyclic polynomial product modulo z⁴−1. This polynomial factors as (z−1)(z+1)(z²+1). Evaluate at 1 and −1 and compute the remaining quadratic product with two sums of two integer products. Each sum fits below p × 2³² and therefore needs just one Montgomery reduction. Add and subtract the three pieces to recover the four outputs. The fixed fourth root disappears from both forward transforms and their inverse.
+
+At the ranked batch size this removes 729,808,896 fixed-root products while preserving the number of variable Montgomery reductions. The two short dot products add 486,539,264 wide integer multiplications across the full batch. Compare the measured full batch against the 35.201212 ms reflected encoder with delayed reductions. The host fixture checks the production middle kernel against independent cyclic convolution at both supported sizes.
