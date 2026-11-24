@@ -1,0 +1,7 @@
+{
+  "base_path": "four-fused-alpha",
+  "base_commit": "928a44eda9abcc3dce0a3b00414b481a192e6e94",
+  "changed_stage": "Schedule all 256 variable-length CRT matrix pairs evenly over eight warps after the fused integer corrections.",
+  "arithmetic": "The 23-bit fixed fraction has worst absolute sum error below 0.000006 for thirty primes. The signed CRT margin is at least 0.25.",
+  "native_GPU_executions": 0
+}
