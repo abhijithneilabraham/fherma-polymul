@@ -1,0 +1,26 @@
+{
+  "base_commit": "0364df78ff4e669495c74f82b1112c4d6a0022dc",
+  "base_path": "folded-two",
+  "unchanged_core_files": {
+    "core/g1-crt.cuh": "d932c1efe89467d4d5ad37a3d8f5220f21da8ee4e6dd5b862915fdf98d974b12",
+    "core/io-copy.cpp": "13fd9a1109f0c1b25a55bb89db52c6bf35ae22d06e399dbb34ad4f9715f5fe1a",
+    "core/ntt-pipeline.cuh": "af383f13c4743e0bcbdf18f78fef94fde938c3588cc36146ae150faf04fae4eb",
+    "core/ntt-weighted.cuh": "7ce451b0c8f8f9eea86fd24dc34665efb7f70b34cb355f8be43349bea280186b",
+    "core/rns-encode-mma.cuh": "6f0f9d007986da5b9caa4732500d203addebf82b7f698a98cc94322891397bcb",
+    "core/rns-encode.cuh": "a9be3a744d93d0de151bcdbbefb6de86992af30316d4682ef1bf3760c2eb63db",
+    "core/rns-plan.hpp": "fe8d662cd8791933fac88c5332b51f406f7eb95a2384df9e18f4273b41325f17",
+    "core/solve.cu": "ac5d45ba5f7a201dfa2f03cd6cee25bb59670d5334c7df9d1808fa76f47d1a3f",
+    "core/vector-copy.cpp": "08f116685bd4142472dad3eebff0330b52fb20756941422dbf2b8a81fe239801"
+  },
+  "changed_stage": "Distribute 29 ranked prime pairs across ten cooperative-load warps and retain six warps at the auxiliary size.",
+  "arithmetic": "canonical a,w<p<2^31; mu=floor(w*2^32/p); high32(a*mu) undershoots floor(a*w/p) by at most one; remainder in [0,2p), one exact subtraction",
+  "domain": "Ordinary residues until the variable product inserts 1/R. Inverse phase contains R^2 times the desired ordinary scale.",
+  "CPU_qualification": [
+    "The production forward and cyclic blocks match independent oracles",
+    "Production inverse and CRT agree with the exact integer oracle when their input is constructed by a direct forward transform",
+    "Graph tests check both partial spectrum slots at batch sizes 1, 2, 3, 57 and 128",
+    "Emulate 320 ranked and 192 auxiliary encoder lanes and compare every prime, sign, row, column, and operand with direct evaluations.",
+    "Check each input warp fragment against direct integer encoding using the production packed row sizes and final short tile."
+  ],
+  "native_GPU_executions": 0
+}
