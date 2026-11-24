@@ -1,0 +1,9 @@
+# Multiply in three Fermat rings
+
+The ranked batch uses three exact moduli of the form 2^h+1, with h equal to 1,536, 1,280 and 1,024. Their product exceeds twice the largest magnitude of any signed convolution coefficient. The rings admit power-of-two roots. Split the polynomial coordinate into two dimensions of 256, pad the residual dimension to 512 for linear convolution, and fold the upper half at each outer frequency. Three residues reconstruct each signed coefficient before the final reduction modulo the supplied 1,747-bit modulus.
+
+The transform encodes each nonzero x by storing x−1 and uses a separate zero flag. Multiplication by a power of two then rotates the stored bits and complements the bits that wrap. Negation complements every stored bit. Eight lanes share each residue. One block computes an entire transform in shared memory. Each pair of transforms reads the new input operands on every graph replay. Other parameter sets use the existing general arithmetic. [Diminished-one arithmetic](https://www.sciencedirect.com/science/article/pii/S0045790618315635)
+
+The final reconstruction uses only shifts, addition, subtraction and modular halving with fixed moduli. Let A=2^256. In the ring order A⁶+1, A⁵+1 and A⁴+1, the two inverses needed by mixed-radix reconstruction are (1+A+A²+A³+A⁴)/2 and A²(A+1)/2. A final fold uses 2^1747 = 9699327 modulo the output modulus.
+
+The host fixtures run all four production CUDA blocks with simulated subgroup operations. Independent direct integer transforms verify every output on selected rows for all three ring widths. Separate tests cover every rotation, exact products including nonzero factors of zero, and 2,071 full native CRT conversions. The Python reference also checked a complete dense ranked product against independent GMP integer multiplication. An official run measures the 128-product batch and reports each ring's first-product time.
