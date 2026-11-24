@@ -1,0 +1,7 @@
+# Accumulate both CRT corrections while recovering residues
+
+Each lane already holds a low and a high residue after the inverse transform. Convert them to two ten-bit fractions and add them to the low and high halves of one 32-bit word. Seven warps cover the primes. Each warp stores one packed partial per coefficient in the existing output matrix scratch. After the existing block barrier, one warp combines the seven partials for all 32 rows, then writes both rounded corrections. This replaces a second read of all 116 residues in each ranked row with seven shared reads. It requires the same block barriers and the same shared allocation as the 36.064465 ms control.
+
+For 0 ≤ t < p < 2^31, use c=floor(2^42/p) and h=high32(t*c). The fraction h/1024 is at most t/p. Its error is less than 1/1024 + p/2^42, hence less than 1.5/1024. With 58 primes the sum error stays below 0.085. The four-times signed reconstruction guard leaves 0.25 to the rounding boundary. Each ten-bit contribution is at most 1023. The sum of 58 such contributions plus the rounding bias 512 stays below 65536, so the halves cannot carry into each other. At most nine contributions enter a warp partial, which also fits in signed matrix scratch.
+
+The complete decoder fixture checks output words at both sizes against arbitrary-precision signed reconstruction. The correction oracle also exercises positive, negative and boundary coefficients independently. The whole-batch comparison measures whether saving 109 shared reads per row repays two extra live values in the inverse loop.
